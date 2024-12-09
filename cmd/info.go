@@ -13,7 +13,7 @@ import (
 
 // whoamiCmd represents the whoami command
 var whoamiCmd = &cobra.Command{
-	Use:   "whoami",
+	Use:   "info",
 	Short: "Shows information about user",
 	Long: `Connects to the Jenkins host using your 
 	credentials and shows information about the user.
@@ -28,10 +28,7 @@ var whoamiCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		err = jClient.Whoami()
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
+		jClient.Info()
 	},
 }
 

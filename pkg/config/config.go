@@ -10,10 +10,14 @@ import (
 
 var homePathVar = "HOME"
 
+var hostVar = "host"
+var userVar = "user"
+var passwordVar = "password"
+
 type JenkinsConfig struct {
 	Host  string
 	User  string
-	Token string
+	Password string
 }
 
 func GetConfig() (*JenkinsConfig, error) {
@@ -28,22 +32,22 @@ func GetConfig() (*JenkinsConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	host := viper.GetString("host")
+	host := viper.GetString(hostVar)
 	if host == "" {
-		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, host)
+		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, hostVar)
 	}
-	user := viper.GetString("user")
-	if host == "" {
-		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, user)
+	user := viper.GetString(userVar)
+	if user == "" {
+		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, userVar)
 	}
-	token := viper.GetString("token")
-	if host == "" {
-		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, token)
+	password := viper.GetString(passwordVar)
+	if password == "" {
+		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, passwordVar)
 	}
 
 	return &JenkinsConfig{
 		Host:  host,
 		User:  user,
-		Token: token,
+		Password: password,
 	}, nil
 }

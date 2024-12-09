@@ -10,22 +10,18 @@ import (
 )
 
 // showCmd represents the show command
-var showCmd = &cobra.Command{
-	Use:   "show",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+var logsCmd = &cobra.Command{
+	Use:   "logs",
+	Short: "Shows logs of a build",
+	Long: `Shows logs of a build`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("show called")
+		fmt.Println("logs called")
 	},
 }
 
 func init() {
-	// Register the "create" command with the root command
-	rootCmd.AddCommand(showCmd)
+	logsCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
+
+	rootCmd.AddCommand(logsCmd)
 
 }

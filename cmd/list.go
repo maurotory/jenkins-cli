@@ -7,11 +7,12 @@ import (
 	"log"
 
 	"github.com/maurotory/jenkins-cli/pkg/config"
+	"github.com/maurotory/jenkins-cli/pkg/errors"
 	"github.com/maurotory/jenkins-cli/pkg/jenkins"
 	"github.com/spf13/cobra"
 )
 
-var jobID string
+var jobFlag string = "jobId"
 
 // buildCmd represents the "list build" subcommand
 var buildCmd = &cobra.Command{
@@ -19,15 +20,23 @@ var buildCmd = &cobra.Command{
 	Short: "Lists builds",
 	Long:  "Lists all the builds",
 	Run: func(cmd *cobra.Command, args []string) {
+         job, err := cmd.Flags().GetString(jobFlag)
+         if err != nil {
+			log.Fatalf("%v", err)
+         }
+         if job == "" { 
+             log.Fatalf("%s: %s",errors.EmptyFlag, jobFlag)
+         }
+         
 		conf, err := config.GetConfig()
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		jClient, err := jenkins.ConnectToJenkins(conf)
+        j, err := jenkins.ConnectToJenkins(conf)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		err = jClient.Whoami()
+        _, err = j.ListBuilds(job)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -43,10 +52,7 @@ var listCmd = &cobra.Command{
 
 func init() {
 	listCmd.AddCommand(buildCmd)
-	listCmd.PersistentFlags().String("job", "", "job path")
-
-	// Add optional flags to the "job" subcommand
-	buildCmd.Flags().StringVar(&jobID, "id", "", "Optional ID for the job")
+	buildCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
 
 	rootCmd.AddCommand(listCmd)
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
