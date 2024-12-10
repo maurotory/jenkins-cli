@@ -13,3 +13,7 @@ var CompileRegex string = "CompileRegexErr"
 var ParseJobId string = "ParseJobIdErr"
 
 var WrongJobResult string = "WrongJobResultErr"
+
+var GetBuild string = "GetBuildErr"
+
+var ConsoleOutput string = "ConsoleOutputErr"
