@@ -17,3 +17,7 @@ var WrongJobResult string = "WrongJobResultErr"
 var GetBuild string = "GetBuildErr"
 
 var ConsoleOutput string = "ConsoleOutputErr"
+
+var GetFolder string = "GetFolderErr"
+
+var GetView string = "GetViewErr"

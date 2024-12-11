@@ -26,10 +26,6 @@ var itemsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		if folder == "" {
-			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
-		}
-
 		conf, err := config.GetConfig()
 		if err != nil {
 			log.Fatalf("%v", err)

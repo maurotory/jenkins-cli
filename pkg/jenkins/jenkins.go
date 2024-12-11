@@ -79,7 +79,41 @@ func (j JenkinsClient) ListBuilds(jobId string) (*gojenkins.JobBuild, error) {
 	return nil, nil
 }
 
-func (j JenkinsClient) ListItems(jobId string) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) ListItems(folderId string) (*gojenkins.JobBuild, error) {
+
+	views, err := j.client.GetAllViews(j.ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s, %v\n", errors.GetView, err)
+	}
+	for _, view := range views {
+		fmt.Println(view.Raw.Jobs)
+		fmt.Println()
+	}
+
+	// for _, v := range j.client.Raw.Views {
+	// view, err := j.client.GetView(j.ctx, v.Name)
+	// if err != nil {
+	// return nil, fmt.Errorf("%s, %v\n", errors.GetView, err)
+	// }
+	// fmt.Println(view.Raw.Jobs[0].Name)
+	// }
+	// view, err := j.client.GetView(j.ctx, "mauria")
+	// if err != nil {
+	// return nil, fmt.Errorf("%s, %v\n", errors.GetFolder, err)
+	// }
+	// fmt.Println(view.Raw.Jobs)
+
+	// pFolder, err := j.client.CreateFolder(j.ctx, "parentFolder")
+	// if err != nil {
+	// panic(err)
+	// }
+	// fmt.Println(pFolder.GetName())
+	folder, err := j.client.GetFolder(j.ctx, "root-pipeline")
+	if err != nil {
+		return nil, fmt.Errorf("%s, %v\n", errors.GetFolder, err)
+	}
+	fmt.Println(folder.Raw)
+
 	return nil, nil
 }
 
