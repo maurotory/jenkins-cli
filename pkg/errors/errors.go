@@ -21,3 +21,15 @@ var ConsoleOutput string = "ConsoleOutputErr"
 var GetFolder string = "GetFolderErr"
 
 var GetView string = "GetViewErr"
+
+var UnknownItemType string = "UnknownItemTypeErr"
+
+var CreateJob string = "CreateJobErr"
+
+var GetbuildFromQueue string = "GetbuildFromQueueErr"
+
+var OpenFile string = "OpenFileErr"
+
+var ReadFile string = "ReadFileErr"
+
+var ParseJson string = "ParseJsonErr"

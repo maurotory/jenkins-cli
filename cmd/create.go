@@ -9,8 +9,11 @@ import (
 	"github.com/maurotory/jenkins-cli/pkg/config"
 	"github.com/maurotory/jenkins-cli/pkg/errors"
 	"github.com/maurotory/jenkins-cli/pkg/jenkins"
+	"github.com/maurotory/jenkins-cli/pkg/parameters"
 	"github.com/spf13/cobra"
 )
+
+var paramsFlag string = "params"
 
 // createCmd represents the create command
 var createCmd = &cobra.Command{
@@ -21,9 +24,9 @@ var createCmd = &cobra.Command{
 
 // buildCmd represents the "list builds" subcommand
 var createBuildCmd = &cobra.Command{
-	Use:   "builds",
-	Short: "Lists builds",
-	Long:  "Lists all the builds",
+	Use:   "build",
+	Short: "Run a build",
+	Long:  "Run a build",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
@@ -31,6 +34,10 @@ var createBuildCmd = &cobra.Command{
 		}
 		if job == "" {
 			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
+		}
+		paramsFile, err := cmd.Flags().GetString(paramsFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
 		}
 
 		conf, err := config.GetConfig()
@@ -41,7 +48,11 @@ var createBuildCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		_, err = j.ListBuilds(job)
+		params, err := parameters.GetParameters(paramsFile)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		_, err = j.CreateJob(job, params)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -49,15 +60,9 @@ var createBuildCmd = &cobra.Command{
 }
 
 func init() {
+	createCmd.AddCommand(createBuildCmd)
+	createBuildCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
+	createBuildCmd.PersistentFlags().String(paramsFlag, "", "Path of the parameters file")
+
 	rootCmd.AddCommand(createCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

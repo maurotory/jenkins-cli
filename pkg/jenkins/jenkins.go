@@ -21,6 +21,9 @@ var Cyan = "\033[36m"
 var Gray = "\033[37m"
 var White = "\033[97m"
 
+var folderType = "com.cloudbees.hudson.plugins.folder.Folder"
+var jobType = "org.jenkinsci.plugins.workflow.job.WorkflowJob"
+
 type JenkinsClient struct {
 	client *gojenkins.Jenkins
 	ctx    context.Context
@@ -42,7 +45,7 @@ func (j JenkinsClient) Info() {
 	// fmt.Printf("Raw: %s\n", j.client.Raw.Jobs)
 }
 
-func (j JenkinsClient) ListBuilds(jobId string) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.JobBuild, error) {
 	jobId, err := parseJobId(jobId)
 	if err != nil {
 		return nil, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
@@ -53,9 +56,12 @@ func (j JenkinsClient) ListBuilds(jobId string) (*gojenkins.JobBuild, error) {
 		return nil, fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
 	}
 
-	printBuildInfo([]string{"JobID", "User", "Result"})
-
+	printColumnInfo([]string{"JobID", "User", "Result"}, 10)
+	count := 0
 	for _, build := range builds {
+		if count >= maxQuantity {
+			break
+		}
 		buildId := build.Number
 		data, err := j.client.GetBuild(j.ctx, jobId, buildId)
 		if err != nil {
@@ -73,52 +79,65 @@ func (j JenkinsClient) ListBuilds(jobId string) (*gojenkins.JobBuild, error) {
 		} else {
 			return nil, fmt.Errorf("%s, %v\n", errors.WrongJobResult, err)
 		}
-		printBuildInfo([]string{fmt.Sprintf("%d", buildId), user, result})
+		printColumnInfo([]string{fmt.Sprintf("%d", buildId), user, result}, 10)
+		count++
 	}
 
 	return nil, nil
 }
 
-func (j JenkinsClient) ListItems(folderId string) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) ListItems(folderId string, maxQuantity int) (*gojenkins.JobBuild, error) {
+	if folderId == "" {
+		views, err := j.client.GetAllViews(j.ctx)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %v\n", errors.GetView, err)
+		}
+		for _, view := range views {
+			err := printJobs(view.Raw.Jobs)
+			if err != nil {
+				return nil, fmt.Errorf("%v", err)
+			}
+		}
+	} else {
+		folderId, err := parseJobId(folderId)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+		}
 
-	views, err := j.client.GetAllViews(j.ctx)
-	if err != nil {
-		return nil, fmt.Errorf("%s, %v\n", errors.GetView, err)
+		folder, err := j.client.GetFolder(j.ctx, folderId)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %v\n", errors.GetFolder, err)
+		}
+		err = printJobs(folder.Raw.Jobs)
+		if err != nil {
+			return nil, fmt.Errorf("%v", err)
+		}
 	}
-	for _, view := range views {
-		fmt.Println(view.Raw.Jobs)
-		fmt.Println()
-	}
-
-	// for _, v := range j.client.Raw.Views {
-	// view, err := j.client.GetView(j.ctx, v.Name)
-	// if err != nil {
-	// return nil, fmt.Errorf("%s, %v\n", errors.GetView, err)
-	// }
-	// fmt.Println(view.Raw.Jobs[0].Name)
-	// }
-	// view, err := j.client.GetView(j.ctx, "mauria")
-	// if err != nil {
-	// return nil, fmt.Errorf("%s, %v\n", errors.GetFolder, err)
-	// }
-	// fmt.Println(view.Raw.Jobs)
-
-	// pFolder, err := j.client.CreateFolder(j.ctx, "parentFolder")
-	// if err != nil {
-	// panic(err)
-	// }
-	// fmt.Println(pFolder.GetName())
-	folder, err := j.client.GetFolder(j.ctx, "root-pipeline")
-	if err != nil {
-		return nil, fmt.Errorf("%s, %v\n", errors.GetFolder, err)
-	}
-	fmt.Println(folder.Raw)
-
 	return nil, nil
 }
 
-func (j JenkinsClient) CreateJob(jobId string) (*gojenkins.JobBuild, error) {
-	return nil, nil
+func (j JenkinsClient) CreateJob(jobId string, params map[string]string) (*gojenkins.JobBuild, error) {
+	jobId, err := parseJobId(jobId)
+	if err != nil {
+		return nil, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	}
+	// fmt.Println(params)
+	queueid, err := j.client.BuildJob(j.ctx, jobId, params)
+	if err != nil {
+		return nil, fmt.Errorf("%s, %v\n", errors.CreateJob, err)
+	}
+
+	var item *gojenkins.Task
+	for {
+		item, err = j.client.GetQueueItem(j.ctx, queueid)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %v\n", errors.GetbuildFromQueue, err)
+		}
+		fmt.Println(item.Raw.Executable)
+		time.Sleep(2 * time.Second)
+	}
+
+	// return nil, nil
 }
 
 func (j JenkinsClient) Logs(jobId string, buildId int64, follow bool) (*gojenkins.JobBuild, error) {
@@ -177,8 +196,25 @@ func parseJobId(jobId string) (string, error) {
 	return jobId, nil
 }
 
-func printBuildInfo(info []string) {
-	columnSize := 10
+func printJobs(jobs []gojenkins.InnerJob) error {
+	printColumnInfo([]string{"Name", "Type"}, 15)
+
+	for _, job := range jobs {
+		var itemType string
+		if job.Class == jobType {
+			itemType = "Job"
+		} else if job.Class == folderType {
+			itemType = "Folder"
+		} else {
+			return fmt.Errorf("%s\n", errors.UnknownItemType)
+		}
+
+		printColumnInfo([]string{job.Name, itemType}, 15)
+	}
+	return nil
+}
+
+func printColumnInfo(info []string, columnSize int) {
 	row := "|"
 	for _, param := range info {
 		paramLength := len(param)

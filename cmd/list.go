@@ -16,6 +16,8 @@ var jobFlag string = "jobId"
 
 var folderFlag string = "folder"
 
+var quantityFlag string = "quantity"
+
 // buildCmd represents the "list items" subcommand
 var itemsCmd = &cobra.Command{
 	Use:   "items",
@@ -23,6 +25,10 @@ var itemsCmd = &cobra.Command{
 	Long:  "Lists all the items",
 	Run: func(cmd *cobra.Command, args []string) {
 		folder, err := cmd.Flags().GetString(folderFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		quantity, err := cmd.Flags().GetInt(quantityFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -34,7 +40,7 @@ var itemsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		_, err = j.ListItems(folder)
+		_, err = j.ListItems(folder, quantity)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -54,6 +60,10 @@ var buildsCmd = &cobra.Command{
 		if job == "" {
 			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
 		}
+		quantity, err := cmd.Flags().GetInt(quantityFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 
 		conf, err := config.GetConfig()
 		if err != nil {
@@ -63,7 +73,7 @@ var buildsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		_, err = j.ListBuilds(job)
+		_, err = j.ListBuilds(job, quantity)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -83,6 +93,9 @@ func init() {
 
 	listCmd.AddCommand(itemsCmd)
 	itemsCmd.PersistentFlags().String(folderFlag, "", "Folder path to list the items")
+
+	listCmd.AddCommand(itemsCmd)
+	listCmd.PersistentFlags().Int(quantityFlag, 10, "Max quantity of items to list, default is 10")
 
 	rootCmd.AddCommand(listCmd)
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
