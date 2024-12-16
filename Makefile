@@ -1,5 +1,5 @@
-GLOBAL_TESTS_DIR = $(shell pwd)
-SHELL := /bin/bash
+JENKINS_CLI__DIR = $(shell pwd)
+SHELL := /bin/zsh
 
 # Variables (optional)
 IMAGE_NAME=jenkins/jenkins

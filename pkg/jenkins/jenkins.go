@@ -56,7 +56,7 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 		return nil, fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
 	}
 
-	printColumnInfo([]string{"JobID", "User", "Result"}, 10)
+	printColumnInfo([]string{"Build ID", "User", "Start Time", "Duration", "Result"}, 15)
 	count := 0
 	for _, build := range builds {
 		if count >= maxQuantity {
@@ -79,7 +79,13 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 		} else {
 			return nil, fmt.Errorf("%s, %v\n", errors.WrongJobResult, err)
 		}
-		printColumnInfo([]string{fmt.Sprintf("%d", buildId), user, result}, 10)
+
+		duration := fmt.Sprintf("%s", time.Duration(data.GetDuration()*float64(time.Millisecond)))
+		timestamp := data.GetTimestamp()
+		startDate := fmt.Sprintf("%02d-%02d %02d:%02d",
+			timestamp.Month(), timestamp.Day(), timestamp.Hour(), timestamp.Minute())
+		printColumnInfo([]string{fmt.Sprintf("%d", buildId), user, startDate,
+			duration, result}, 15)
 		count++
 	}
 
@@ -116,28 +122,61 @@ func (j JenkinsClient) ListItems(folderId string, maxQuantity int) (*gojenkins.J
 	return nil, nil
 }
 
-func (j JenkinsClient) CreateJob(jobId string, params map[string]string) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
+	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
+	}
+	fmt.Printf("Result: %s\n", build.GetResult())
+	fmt.Printf("Artifacts:\n")
+	artifacts := build.GetArtifacts()
+	for _, artifact := range artifacts {
+		fmt.Println(artifact.FileName)
+	}
+	return nil
+}
+
+func (j JenkinsClient) GetArtifacts(jobId string, buildId int64) error {
+	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
+	}
+	fmt.Printf("Result: %s\n", build.GetResult())
+	fmt.Printf("Artifacts:\n")
+	artifacts := build.GetArtifacts()
+	for _, artifact := range artifacts {
+		fmt.Println(artifact.FileName)
+	}
+	return nil
+}
+
+func (j JenkinsClient) CreateJob(jobId string, params map[string]string) (int64, error) {
 	jobId, err := parseJobId(jobId)
 	if err != nil {
-		return nil, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+		return 0, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
 	}
 	// fmt.Println(params)
 	queueid, err := j.client.BuildJob(j.ctx, jobId, params)
 	if err != nil {
-		return nil, fmt.Errorf("%s, %v\n", errors.CreateJob, err)
+		return 0, fmt.Errorf("%s, %v\n", errors.CreateJob, err)
 	}
 
 	var item *gojenkins.Task
-	for {
+	timeout := 50
+	var count int
+	for count < timeout {
 		item, err = j.client.GetQueueItem(j.ctx, queueid)
 		if err != nil {
-			return nil, fmt.Errorf("%s, %v\n", errors.GetbuildFromQueue, err)
+			return 0, fmt.Errorf("%s, %v\n", errors.GetbuildFromQueue, err)
 		}
-		fmt.Println(item.Raw.Executable)
-		time.Sleep(2 * time.Second)
+		if item.Raw.Executable.Number != 0 {
+			break
+		}
+		time.Sleep(3 * time.Second)
+		count++
 	}
 
-	// return nil, nil
+	return item.Raw.Executable.Number, nil
 }
 
 func (j JenkinsClient) Logs(jobId string, buildId int64, follow bool) (*gojenkins.JobBuild, error) {

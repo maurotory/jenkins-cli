@@ -4,30 +4,25 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/maurotory/jenkins-cli/pkg/config"
 	"github.com/maurotory/jenkins-cli/pkg/errors"
 	"github.com/maurotory/jenkins-cli/pkg/jenkins"
-	"github.com/maurotory/jenkins-cli/pkg/parameters"
 	"github.com/spf13/cobra"
 )
 
-var paramsFlag string = "params"
-
-// createCmd represents the create command
-var createCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create command to create various Jenkins resources",
-	Long:  `Create command to create various Jenkins resources`,
+var getCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get command to create various Jenkins resources",
+	Long:  `Get command to create various Jenkins resources`,
 }
 
 // buildCmd represents the "list builds" subcommand
-var createBuildCmd = &cobra.Command{
+var getBuildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Run a build",
-	Long:  "Run a build",
+	Short: "Get a build",
+	Long:  "Get a build",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
@@ -36,7 +31,13 @@ var createBuildCmd = &cobra.Command{
 		if job == "" {
 			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
 		}
-		paramsFile, err := cmd.Flags().GetString(paramsFlag)
+		build, err := cmd.Flags().GetInt64(buildFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		if build == 0 {
+			log.Fatalf("%s: %s", errors.EmptyFlag, buildFlag)
+		}
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -49,22 +50,17 @@ var createBuildCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		params, err := parameters.GetParameters(paramsFile)
+		err = j.GetBuild(job, build)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		buildId, err := j.CreateJob(job, params)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		fmt.Printf("buildId: %d\n", buildId)
 	},
 }
 
 func init() {
 	createCmd.AddCommand(createBuildCmd)
 	createBuildCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
-	createBuildCmd.PersistentFlags().String(paramsFlag, "", "Path of the parameters file")
+	createBuildCmd.PersistentFlags().String(buildFlag, "", "Mandatory ID for the build")
 
 	rootCmd.AddCommand(createCmd)
 }

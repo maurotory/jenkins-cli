@@ -91,7 +91,6 @@ func init() {
 	listCmd.AddCommand(buildsCmd)
 	buildsCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
 
-	listCmd.AddCommand(itemsCmd)
 	itemsCmd.PersistentFlags().String(folderFlag, "", "Folder path to list the items")
 
 	listCmd.AddCommand(itemsCmd)
