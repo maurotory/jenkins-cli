@@ -123,6 +123,10 @@ func (j JenkinsClient) ListItems(folderId string, maxQuantity int) (*gojenkins.J
 }
 
 func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
+	jobId, err := parseJobId(jobId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	}
 	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
@@ -136,18 +140,31 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 	return nil
 }
 
-func (j JenkinsClient) GetArtifacts(jobId string, buildId int64) error {
+func (j JenkinsClient) GetArtifact(jobId, artifact, folder string, buildId int64) error {
+	jobId, err := parseJobId(jobId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	}
 	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
 	}
-	fmt.Printf("Result: %s\n", build.GetResult())
-	fmt.Printf("Artifacts:\n")
 	artifacts := build.GetArtifacts()
-	for _, artifact := range artifacts {
-		fmt.Println(artifact.FileName)
+	for _, a := range artifacts {
+		if a.FileName == artifact {
+			saved, err := a.SaveToDir(j.ctx, folder)
+			if err != nil {
+				return fmt.Errorf("%s, %v\n", errors.SaveFile, err)
+			}
+			if !saved {
+				return fmt.Errorf("%s\n", errors.SaveFile)
+			}
+			return nil
+		}
+		fmt.Printf("artifact saved in the path:\n%s", artifact+"/"+folder)
 	}
-	return nil
+
+	return fmt.Errorf("%s\n", errors.ArtifactNotFound)
 }
 
 func (j JenkinsClient) CreateJob(jobId string, params map[string]string) (int64, error) {

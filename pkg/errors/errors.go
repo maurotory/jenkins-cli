@@ -33,3 +33,7 @@ var OpenFile string = "OpenFileErr"
 var ReadFile string = "ReadFileErr"
 
 var ParseJson string = "ParseJsonErr"
+
+var SaveFile string = "SaveFileErr"
+
+var ArtifactNotFound string = "ArtifactNotFoundErr"
