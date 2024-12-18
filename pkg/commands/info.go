@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package commands
 
 import (
@@ -11,16 +8,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// whoamiCmd represents the whoami command
-var whoamiCmd = &cobra.Command{
+var infoCmd = &cobra.Command{
 	Use:   "info",
-	Short: "Shows information about user",
+	Short: "Shows information",
 	Long: `Connects to the Jenkins host using your 
-	credentials and shows information about the user.
+	credentials and shows information about the server.
 
-	Credentials must be saved in ~/.jctl/config.json`,
+	By default, credentials are obtained from  ~/.jctl/config.json`,
 	Run: func(cmd *cobra.Command, args []string) {
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -33,5 +33,5 @@ var whoamiCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(whoamiCmd)
+	rootCmd.AddCommand(infoCmd)
 }

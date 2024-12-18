@@ -30,7 +30,7 @@ type JenkinsClient struct {
 }
 
 func ConnectToJenkins(conf *config.JenkinsConfig) (*JenkinsClient, error) {
-	jenkins := gojenkins.CreateJenkins(nil, conf.Host, conf.User, conf.Password)
+	jenkins := gojenkins.CreateJenkins(nil, conf.Host, conf.User, conf.Token)
 	ctx := context.Background()
 	_, err := jenkins.Init(ctx)
 	if err != nil {
@@ -40,6 +40,7 @@ func ConnectToJenkins(conf *config.JenkinsConfig) (*JenkinsClient, error) {
 }
 
 func (j JenkinsClient) Info() {
+	fmt.Println("Successfully Connected:")
 	fmt.Printf("Server: %s\n", j.client.Server)
 	fmt.Printf("Version: %s\n", j.client.Version)
 	// fmt.Printf("Raw: %s\n", j.client.Raw.Jobs)
@@ -92,7 +93,7 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 	return nil, nil
 }
 
-func (j JenkinsClient) ListItems(folderId string, maxQuantity int) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) ListJobs(folderId string, maxQuantity int) (*gojenkins.JobBuild, error) {
 	if folderId == "" {
 		views, err := j.client.GetAllViews(j.ctx)
 		if err != nil {
@@ -131,7 +132,25 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
 	}
-	fmt.Printf("Result: %s\n", build.GetResult())
+	var result string
+	if build.IsRunning(j.ctx) {
+		result = Blue + "RUNNING" + Reset
+	} else if build.GetResult() == "SUCCESS" {
+		result = Green + build.GetResult() + Reset
+	} else if build.GetResult() == "FAILURE" {
+		result = Red + build.GetResult() + Reset
+	} else {
+		return fmt.Errorf("%s, %v\n", errors.WrongJobResult, err)
+	}
+
+	duration := time.Duration(build.GetDuration() * float64(time.Millisecond)).String()
+	timestamp := build.GetTimestamp()
+	startDate := fmt.Sprintf("%02d-%02d-%04d %02d:%02d:%02d",
+		timestamp.Day(), timestamp.Month(), timestamp.Year(), timestamp.Hour(), timestamp.Minute(), timestamp.Second())
+	separation := "----------------\n"
+	fmt.Printf("Result:\n%s\n%s", result, separation)
+	fmt.Printf("Duration:\n%s\n%s", duration, separation)
+	fmt.Printf("Start Date:\n%s\n%s", startDate, separation)
 	fmt.Printf("Artifacts:\n")
 	artifacts := build.GetArtifacts()
 	for _, artifact := range artifacts {
@@ -250,42 +269,4 @@ func parseJobId(jobId string) (string, error) {
 	jobId = r.ReplaceAllString(jobId, "/job/")
 
 	return jobId, nil
-}
-
-func printJobs(jobs []gojenkins.InnerJob) error {
-	printColumnInfo([]string{"Name", "Type"}, 15)
-
-	for _, job := range jobs {
-		var itemType string
-		if job.Class == jobType {
-			itemType = "Job"
-		} else if job.Class == folderType {
-			itemType = "Folder"
-		} else {
-			return fmt.Errorf("%s\n", errors.UnknownItemType)
-		}
-
-		printColumnInfo([]string{job.Name, itemType}, 15)
-	}
-	return nil
-}
-
-func printColumnInfo(info []string, columnSize int) {
-	row := "|"
-	for _, param := range info {
-		paramLength := len(param)
-		if param == "RUNNING" {
-			param = Blue + param + Reset
-		} else if param == "SUCCESS" {
-			param = Green + param + Reset
-		} else if param == "FAILURE" {
-			param = Red + param + Reset
-		}
-		row = row + param
-		for i := 0; i < columnSize-paramLength; i++ {
-			row = row + " "
-		}
-		row = row + "|"
-	}
-	fmt.Printf("%s\n", row)
 }

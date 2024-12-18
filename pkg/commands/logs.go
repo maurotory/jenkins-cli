@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var buildFlag string = "buildId"
 var followFlag string = "follow"
 
 // showCmd represents the show command
@@ -39,7 +38,11 @@ var logsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -55,9 +58,9 @@ var logsCmd = &cobra.Command{
 }
 
 func init() {
-	logsCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
-	logsCmd.PersistentFlags().Int64(buildFlag, 0, "Mandatory ID for the build")
-	logsCmd.PersistentFlags().Bool(followFlag, false, "If set, the logs will be prompted in follow mode")
+	logsCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
+	logsCmd.PersistentFlags().Int64(buildFlag, 0, "ID number of the build")
+	logsCmd.PersistentFlags().BoolP(followFlag, "f", false, "If set, the logs will be prompted in follow mode")
 
 	rootCmd.AddCommand(logsCmd)
 

@@ -12,17 +12,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var jobFlag string = "jobId"
-
 var folderFlag string = "folder"
 
 var quantityFlag string = "quantity"
 
-// buildCmd represents the "list items" subcommand
-var itemsCmd = &cobra.Command{
-	Use:   "items",
-	Short: "Lists items",
-	Long:  "Lists all the items",
+var listJobsCmd = &cobra.Command{
+	Use:   "jobs",
+	Short: "List of jobs",
+	Long:  "Lists all jobs of the specified folder, by default lists the jobs of the main view.",
 	Run: func(cmd *cobra.Command, args []string) {
 		folder, err := cmd.Flags().GetString(folderFlag)
 		if err != nil {
@@ -32,7 +29,11 @@ var itemsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -40,7 +41,7 @@ var itemsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		_, err = j.ListItems(folder, quantity)
+		_, err = j.ListJobs(folder, quantity)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -48,7 +49,7 @@ var itemsCmd = &cobra.Command{
 }
 
 // buildCmd represents the "list builds" subcommand
-var buildsCmd = &cobra.Command{
+var listBuildsCmd = &cobra.Command{
 	Use:   "builds",
 	Short: "Lists builds",
 	Long:  "Lists all the builds",
@@ -64,8 +65,11 @@ var buildsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -83,19 +87,18 @@ var buildsCmd = &cobra.Command{
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "lists of jobs and build",
-	Long:  `Commands that allows listing the diferent jenkins resources`,
+	Short: "Lists a resource of the selected type",
+	Long:  `Commands that allows listing different Jenkins resources`,
 }
 
 func init() {
-	listCmd.AddCommand(buildsCmd)
-	buildsCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
+	listCmd.AddCommand(listBuildsCmd)
+	listBuildsCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
 
-	itemsCmd.PersistentFlags().String(folderFlag, "", "Folder path to list the items")
+	listJobsCmd.PersistentFlags().String(folderFlag, "", "Parent folder path where to list items to")
 
-	listCmd.AddCommand(itemsCmd)
-	listCmd.PersistentFlags().Int(quantityFlag, 10, "Max quantity of items to list, default is 10")
+	listCmd.AddCommand(listJobsCmd)
+	listCmd.PersistentFlags().Int(quantityFlag, 10, "Max quantity of jobs to list, default is 10")
 
 	rootCmd.AddCommand(listCmd)
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

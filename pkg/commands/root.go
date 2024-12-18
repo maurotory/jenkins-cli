@@ -9,11 +9,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var configFlag string = "config"
+
+var jobFlag string = "jobId"
+
+var buildFlag string = "buildId"
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "jctl",
-	Short: "Easy to use Jenkins cli to interact with Jenkins",
-	Long:  `Easy to use Jenkins cli to interact with Jenkins.`,
+	Short: "Jenkins CLI",
+	Long:  `Easy to use CLI to interact with Jenkins.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -26,5 +32,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Path where the CLI Jenkins configuration is stored")
 }

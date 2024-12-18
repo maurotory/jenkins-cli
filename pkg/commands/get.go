@@ -18,14 +18,14 @@ var outputFlag string = "output"
 
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get command to create various Jenkins resources",
-	Long:  `Get command to create various Jenkins resources`,
+	Short: "Gets a resource of the selected type",
+	Long:  `Commands that allows listing different Jenkins resources`,
 }
 
 var getBuildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Get a build",
-	Long:  "Get a build",
+	Short: "Gets a build",
+	Long:  "Gets a build and prints its information",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
@@ -44,8 +44,11 @@ var getBuildCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -62,8 +65,8 @@ var getBuildCmd = &cobra.Command{
 
 var getArtifactCmd = &cobra.Command{
 	Use:   "artifact",
-	Short: "Get a artifact",
-	Long:  "Get a artifact",
+	Short: "Gets an artifact",
+	Long:  "Gets an artifact and stores in the specified path",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
@@ -99,7 +102,11 @@ var getArtifactCmd = &cobra.Command{
 				log.Fatalf("%v", err)
 			}
 		}
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -117,9 +124,9 @@ var getArtifactCmd = &cobra.Command{
 func init() {
 	getCmd.AddCommand(getBuildCmd)
 	getCmd.AddCommand(getArtifactCmd)
-	getCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
-	getCmd.PersistentFlags().Int64(buildFlag, 0, "Mandatory ID for the build")
-	getArtifactCmd.PersistentFlags().String(outputFlag, "", "Folder path to save the artifact")
+	getCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
+	getCmd.PersistentFlags().Int64(buildFlag, 0, "ID number of the build")
+	getArtifactCmd.PersistentFlags().StringP(outputFlag, "o", "", "Folder path to save the artifact")
 	getArtifactCmd.PersistentFlags().String(artifactFlag, "", "Artifact name")
 
 	rootCmd.AddCommand(getCmd)

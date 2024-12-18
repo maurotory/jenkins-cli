@@ -19,15 +19,15 @@ var paramsFlag string = "params"
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create command to create various Jenkins resources",
-	Long:  `Create command to create various Jenkins resources`,
+	Short: "Create a resource of the selected path",
+	Long:  `Commands that allows creating different Jenkins resources`,
 }
 
 // buildCmd represents the "list builds" subcommand
 var createBuildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Run a build",
-	Long:  "Run a build",
+	Short: "Create a build",
+	Long:  "Create a build and prints this new build ID",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
@@ -40,8 +40,11 @@ var createBuildCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-
-		conf, err := config.GetConfig()
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -63,8 +66,8 @@ var createBuildCmd = &cobra.Command{
 
 func init() {
 	createCmd.AddCommand(createBuildCmd)
-	createBuildCmd.PersistentFlags().String(jobFlag, "", "Mandatory ID for the job")
-	createBuildCmd.PersistentFlags().String(paramsFlag, "", "Path of the parameters file")
+	createBuildCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
+	createBuildCmd.PersistentFlags().StringP(paramsFlag, "p", "", "Path where the parameters json file is stored")
 
 	rootCmd.AddCommand(createCmd)
 }
