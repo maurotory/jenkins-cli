@@ -26,8 +26,8 @@ var createCmd = &cobra.Command{
 // buildCmd represents the "list builds" subcommand
 var createBuildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Create a build",
-	Long:  "Create a build and prints this new build ID",
+	Short: "Creates a build",
+	Long:  "Creates a build and prints this new build ID",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
