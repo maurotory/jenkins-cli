@@ -50,17 +50,13 @@ Additionally you can add a the field `jobId` in the `config.json` file to take t
 
 To create and run a new build run the following:
 ```
-jctl create build --jobId "my-job" --params params.json
+jctl create build --jobId "my-job" --params params.env
 ```
-Where the `params.json` contains a json file with a list of all the parametres used to run the job. You can ignore this flag if the pipeline does not have any parameters.
-The file must have a key/value structure, with only string values are supported, as Jenkins only support this type of parametres. An example of a `params.json` file is shown below:
+Where the `params.env` consists of a `.env` file with all the parameters as variables, by default `jctl`. You can ignore this flag if the pipeline does not need any parameters. Example of a `.env` file is shown below:
 ```
-{
-  "STRING_PARAM": "mystring",
-  "BOOLEAN_PARAM": "false",
-  "NUMBER_PARAM": "20"
-}
-
+"STRING_PARAM"="mystring"
+"BOOLEAN_PARAM"=false
+"NUMBER_PARAM"=20
 ```
 
 

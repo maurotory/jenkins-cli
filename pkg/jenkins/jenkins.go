@@ -24,6 +24,8 @@ var White = "\033[97m"
 var folderType = "com.cloudbees.hudson.plugins.folder.Folder"
 var jobType = "org.jenkinsci.plugins.workflow.job.WorkflowJob"
 
+var timerType = "org.jenkinsci.plugins.parameterizedscheduler.ParameterizedTimerTriggerCause"
+
 type JenkinsClient struct {
 	client *gojenkins.Jenkins
 	ctx    context.Context
@@ -56,7 +58,6 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 	if err != nil {
 		return nil, fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
 	}
-
 	printColumnInfo([]string{"Build ID", "User", "Start Time", "Duration", "Result"}, 15)
 	count := 0
 	for _, build := range builds {
@@ -68,7 +69,10 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 		if err != nil {
 			return nil, fmt.Errorf("%s, %v\n", errors.GetBuild, err)
 		}
-		user := data.Raw.Actions[0].Causes[0]["userId"].(string)
+		user, err := getUser(data)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %v\n", errors.GetUser, err)
+		}
 
 		var result string
 		if data.IsRunning(j.ctx) {
@@ -160,12 +164,17 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 		return fmt.Errorf("%s, %v\n", errors.WrongJobResult, err)
 	}
 
+	user, err := getUser(build)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.GetUser, err)
+	}
 	duration := time.Duration(build.GetDuration() * float64(time.Millisecond)).String()
 	timestamp := build.GetTimestamp()
 	startDate := fmt.Sprintf("%02d-%02d-%04d %02d:%02d:%02d",
 		timestamp.Day(), timestamp.Month(), timestamp.Year(), timestamp.Hour(), timestamp.Minute(), timestamp.Second())
 	separation := "----------------\n"
 	fmt.Printf("Result:\n%s\n%s", result, separation)
+	fmt.Printf("User:\n%s\n%s", user, separation)
 	fmt.Printf("Duration:\n%s\n%s", duration, separation)
 	fmt.Printf("Start Date:\n%s\n%s", startDate, separation)
 	fmt.Printf("Artifacts:\n")

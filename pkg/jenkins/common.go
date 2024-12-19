@@ -98,3 +98,17 @@ func checkFile(filePath string) (bool, error) {
 		return false, nil
 	}
 }
+
+func getUser(build *gojenkins.Build) (string, error) {
+	for _, action := range build.Raw.Actions {
+		if len(action.Causes) == 0 {
+			continue
+		}
+		if action.Causes[0]["_class"].(string) == timerType {
+			return "timer", nil
+		}
+		user := action.Causes[0]["userId"].(string)
+		return user, nil
+	}
+	return "", nil
+}

@@ -43,3 +43,5 @@ var ArtifactNotFound string = "ArtifactNotFoundError"
 var FileAlreadyExists string = "FileAlreadyExistsError"
 
 var PathIsADirectory string = "PathIsADirectoryErr"
+
+var GetUser string = "GetUseError"
