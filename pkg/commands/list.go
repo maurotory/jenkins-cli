@@ -48,7 +48,6 @@ var listJobsCmd = &cobra.Command{
 	},
 }
 
-// buildCmd represents the "list builds" subcommand
 var listBuildsCmd = &cobra.Command{
 	Use:   "builds",
 	Short: "Lists builds",
@@ -84,6 +83,44 @@ var listBuildsCmd = &cobra.Command{
 	},
 }
 
+var listArtifactsCmd = &cobra.Command{
+	Use:   "artifacts",
+	Short: "Lists artifacts",
+	Long:  "Lists all the artifacts",
+	Run: func(cmd *cobra.Command, args []string) {
+		job, err := cmd.Flags().GetString(jobFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		if job == "" {
+			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
+		}
+		build, err := cmd.Flags().GetInt64(buildFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		if build == 0 {
+			log.Fatalf("%s: %s", errors.EmptyFlag, buildFlag)
+		}
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		j, err := jenkins.ConnectToJenkins(conf)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		err = j.ListArtifacts(job, build)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+	},
+}
+
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
@@ -93,9 +130,13 @@ var listCmd = &cobra.Command{
 
 func init() {
 	listCmd.AddCommand(listBuildsCmd)
-	listBuildsCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
+	listBuildsCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
 
-	listJobsCmd.PersistentFlags().String(folderFlag, "", "Parent folder path where to list items to")
+	listCmd.AddCommand(listArtifactsCmd)
+	listArtifactsCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
+	listArtifactsCmd.PersistentFlags().Int64(buildFlag, 0, buildFlagMsg)
+
+	listJobsCmd.PersistentFlags().String(folderFlag, "", "Parent folder path where to list jobs to")
 
 	listCmd.AddCommand(listJobsCmd)
 	listCmd.PersistentFlags().Int(quantityFlag, 10, "Max quantity of jobs to list, default is 10")

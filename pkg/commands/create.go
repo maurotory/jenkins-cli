@@ -66,8 +66,8 @@ var createBuildCmd = &cobra.Command{
 
 func init() {
 	createCmd.AddCommand(createBuildCmd)
-	createBuildCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
-	createBuildCmd.PersistentFlags().StringP(paramsFlag, "p", "", "Path where the parameters json file is stored")
+	createBuildCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
+	createBuildCmd.PersistentFlags().StringP(paramsFlag, "p", ".env", "Path where the parameters json file is stored")
 
 	rootCmd.AddCommand(createCmd)
 }

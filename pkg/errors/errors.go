@@ -1,39 +1,45 @@
 package errors
 
-var EmptyVar string = "emptyVarErr"
+var EmptyVar string = "emptyVarError"
 
-var EmptyFlag string = "emptyFlagErr"
+var EmptyFlag string = "emptyFlagError"
 
-var JenkinsConf string = "jenkinsConfErr"
+var JenkinsConf string = "jenkinsConfError"
 
-var GetBuilds string = "getBuildsErr"
+var GetBuilds string = "getBuildsError"
 
-var CompileRegex string = "CompileRegexErr"
+var CompileRegex string = "CompileRegexError"
 
-var ParseJobId string = "ParseJobIdErr"
+var ParseJobId string = "ParseJobIdError"
 
-var WrongJobResult string = "WrongJobResultErr"
+var WrongJobResult string = "WrongJobResultError"
 
-var GetBuild string = "GetBuildErr"
+var GetBuild string = "GetBuildError"
 
-var ConsoleOutput string = "ConsoleOutputErr"
+var ConsoleOutput string = "ConsoleOutputError"
 
-var GetFolder string = "GetFolderErr"
+var GetFolder string = "GetFolderError"
 
-var GetView string = "GetViewErr"
+var GetView string = "GetViewError"
 
-var UnknownItemType string = "UnknownItemTypeErr"
+var UnknownItemType string = "UnknownItemTypeError"
 
-var CreateJob string = "CreateJobErr"
+var CreateJob string = "CreateJobError"
 
-var GetbuildFromQueue string = "GetbuildFromQueueErr"
+var GetbuildFromQueue string = "GetbuildFromQueueError"
 
-var OpenFile string = "OpenFileErr"
+var OpenFile string = "OpenFileError"
 
-var ReadFile string = "ReadFileErr"
+var ReadFile string = "ReadFileError"
 
-var ParseJson string = "ParseJsonErr"
+var ParseJson string = "ParseJsonError"
 
-var SaveFile string = "SaveFileErr"
+var ParseParamsFile string = "ParseParamsFileError"
 
-var ArtifactNotFound string = "ArtifactNotFoundErr"
+var SaveFile string = "SaveFileError"
+
+var ArtifactNotFound string = "ArtifactNotFoundError"
+
+var FileAlreadyExists string = "FileAlreadyExistsError"
+
+var PathIsADirectory string = "PathIsADirectoryErr"

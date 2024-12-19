@@ -3,7 +3,7 @@ package jenkins
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"os"
 	"time"
 
 	"github.com/bndr/gojenkins"
@@ -93,6 +93,23 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 	return nil, nil
 }
 
+func (j JenkinsClient) ListArtifacts(jobId string, buildId int64) error {
+	jobId, err := parseJobId(jobId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	}
+
+	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
+	}
+	artifacts := build.GetArtifacts()
+	for _, artifact := range artifacts {
+		fmt.Println(artifact.FileName)
+	}
+
+	return nil
+}
 func (j JenkinsClient) ListJobs(folderId string, maxQuantity int) (*gojenkins.JobBuild, error) {
 	if folderId == "" {
 		views, err := j.client.GetAllViews(j.ctx)
@@ -159,7 +176,14 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 	return nil
 }
 
-func (j JenkinsClient) GetArtifact(jobId, artifact, folder string, buildId int64) error {
+func (j JenkinsClient) GetArtifact(jobId, artifact, output string, buildId int64) error {
+	if output == "" {
+		currentFolder, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		output = currentFolder + "/" + artifact
+	}
 	jobId, err := parseJobId(jobId)
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
@@ -171,18 +195,26 @@ func (j JenkinsClient) GetArtifact(jobId, artifact, folder string, buildId int64
 	artifacts := build.GetArtifacts()
 	for _, a := range artifacts {
 		if a.FileName == artifact {
-			saved, err := a.SaveToDir(j.ctx, folder)
+			saveFile, err := checkFile(output)
+			if err != nil {
+				return fmt.Errorf("%v\n", err)
+			}
+			if !saveFile {
+				fmt.Println("Aborting...")
+				return nil
+			}
+
+			saved, err := a.Save(j.ctx, output)
 			if err != nil {
 				return fmt.Errorf("%s, %v\n", errors.SaveFile, err)
 			}
 			if !saved {
 				return fmt.Errorf("%s\n", errors.SaveFile)
 			}
+			fmt.Printf("Artifact saved in the path: %s\n", output)
 			return nil
 		}
-		fmt.Printf("artifact saved in the path:\n%s", artifact+"/"+folder)
 	}
-
 	return fmt.Errorf("%s\n", errors.ArtifactNotFound)
 }
 
@@ -191,7 +223,6 @@ func (j JenkinsClient) CreateJob(jobId string, params map[string]string) (int64,
 	if err != nil {
 		return 0, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
 	}
-	// fmt.Println(params)
 	queueid, err := j.client.BuildJob(j.ctx, jobId, params)
 	if err != nil {
 		return 0, fmt.Errorf("%s, %v\n", errors.CreateJob, err)
@@ -236,7 +267,7 @@ func (j JenkinsClient) Logs(jobId string, buildId int64, follow bool) (*gojenkin
 			}
 
 			if console.Offset != start {
-				fmt.Printf(console.Content)
+				fmt.Printf("%s", console.Content)
 			}
 
 			time.Sleep(3 * time.Second)
@@ -247,26 +278,4 @@ func (j JenkinsClient) Logs(jobId string, buildId int64, follow bool) (*gojenkin
 	}
 
 	return nil, nil
-}
-
-func parseJobId(jobId string) (string, error) {
-	r, err := regexp.Compile(`\/$`)
-	if err != nil {
-		return "", fmt.Errorf("%s, %v\n", errors.CompileRegex, err)
-	}
-	jobId = r.ReplaceAllString(jobId, "")
-
-	r, err = regexp.Compile(`^\/`)
-	if err != nil {
-		return "", fmt.Errorf("%s, %v\n", errors.CompileRegex, err)
-	}
-	jobId = r.ReplaceAllString(jobId, "")
-
-	r, err = regexp.Compile(`\/`)
-	if err != nil {
-		return "", fmt.Errorf("%s, %v\n", errors.CompileRegex, err)
-	}
-	jobId = r.ReplaceAllString(jobId, "/job/")
-
-	return jobId, nil
 }

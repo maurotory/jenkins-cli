@@ -5,7 +5,6 @@ package commands
 
 import (
 	"log"
-	"os"
 
 	"github.com/maurotory/jenkins-cli/pkg/config"
 	"github.com/maurotory/jenkins-cli/pkg/errors"
@@ -66,7 +65,7 @@ var getBuildCmd = &cobra.Command{
 var getArtifactCmd = &cobra.Command{
 	Use:   "artifact",
 	Short: "Gets an artifact",
-	Long:  "Gets an artifact and stores in the specified path",
+	Long:  "Gets an artifact and saves it at your current directory path",
 	Run: func(cmd *cobra.Command, args []string) {
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
@@ -96,12 +95,6 @@ var getArtifactCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		if output == "" {
-			output, err = os.Getwd()
-			if err != nil {
-				log.Fatalf("%v", err)
-			}
-		}
 		configPath, err := cmd.Flags().GetString(configFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
@@ -124,10 +117,10 @@ var getArtifactCmd = &cobra.Command{
 func init() {
 	getCmd.AddCommand(getBuildCmd)
 	getCmd.AddCommand(getArtifactCmd)
-	getCmd.PersistentFlags().String(jobFlag, "", "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job")
-	getCmd.PersistentFlags().Int64(buildFlag, 0, "ID number of the build")
-	getArtifactCmd.PersistentFlags().StringP(outputFlag, "o", "", "Folder path to save the artifact")
-	getArtifactCmd.PersistentFlags().String(artifactFlag, "", "Artifact name")
+	getCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
+	getCmd.PersistentFlags().Int64(buildFlag, 0, buildFlagMsg)
+	getArtifactCmd.PersistentFlags().StringP(outputFlag, "o", "", "Custom filename path where to save the artifact")
+	getArtifactCmd.PersistentFlags().String(artifactFlag, "", "Artifact Name which will be downloded")
 
 	rootCmd.AddCommand(getCmd)
 }
