@@ -33,20 +33,27 @@ func parseJobId(jobId string) (string, error) {
 	return jobId, nil
 }
 
-func printJobs(jobs []gojenkins.InnerJob) error {
-	printColumnInfo([]string{"Name", "Type"}, 15)
+func printJobs(jobs []gojenkins.InnerJob, maxQuantity int) error {
+	printColumnInfo([]string{"Name", "Type"}, 40)
 
+	count := 0
 	for _, job := range jobs {
+		if count >= maxQuantity {
+			break
+		}
 		var itemType string
 		if job.Class == jobType {
 			itemType = "Pipeline"
 		} else if job.Class == folderType {
 			itemType = "Folder"
+		} else if job.Class == freestyleType {
+			itemType = "Freestyle"
 		} else {
 			return fmt.Errorf("%s\n", errors.UnknownItemType)
 		}
 
-		printColumnInfo([]string{job.Name, itemType}, 15)
+		printColumnInfo([]string{job.Name, itemType}, 40)
+		count++
 	}
 	return nil
 }
@@ -61,6 +68,8 @@ func printColumnInfo(info []string, columnSize int) {
 			param = Green + param + Reset
 		} else if param == "FAILURE" {
 			param = Red + param + Reset
+		} else if param == "ABORTED" {
+			param = Gray + param + Reset
 		}
 		row = row + param
 		for i := 0; i < columnSize-paramLength; i++ {

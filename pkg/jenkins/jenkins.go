@@ -23,6 +23,7 @@ var White = "\033[97m"
 
 var folderType = "com.cloudbees.hudson.plugins.folder.Folder"
 var jobType = "org.jenkinsci.plugins.workflow.job.WorkflowJob"
+var freestyleType = "hudson.model.FreeStyleProject"
 
 var timerType = "org.jenkinsci.plugins.parameterizedscheduler.ParameterizedTimerTriggerCause"
 
@@ -81,6 +82,8 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 			result = data.GetResult()
 		} else if data.GetResult() == "FAILURE" {
 			result = data.GetResult()
+		} else if data.GetResult() == "ABORTED" {
+			result = data.GetResult()
 		} else {
 			return nil, fmt.Errorf("%s, %v\n", errors.WrongJobResult, err)
 		}
@@ -114,16 +117,29 @@ func (j JenkinsClient) ListArtifacts(jobId string, buildId int64) error {
 
 	return nil
 }
-func (j JenkinsClient) ListJobs(folderId string, maxQuantity int) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) ListJobs(folderId string, view string, maxQuantity int) (*gojenkins.JobBuild, error) {
 	if folderId == "" {
 		views, err := j.client.GetAllViews(j.ctx)
 		if err != nil {
 			return nil, fmt.Errorf("%s, %v\n", errors.GetView, err)
 		}
-		for _, view := range views {
-			err := printJobs(view.Raw.Jobs)
-			if err != nil {
-				return nil, fmt.Errorf("%v", err)
+		if view != "" {
+			for _, v := range views {
+				if view == v.GetName() {
+					err := printJobs(v.Raw.Jobs, maxQuantity)
+					if err != nil {
+						return nil, fmt.Errorf("%v", err)
+					}
+				}
+			}
+		} else {
+			for _, v := range views {
+				fmt.Println(v.GetName())
+				err := printJobs(v.Raw.Jobs, maxQuantity)
+				if err != nil {
+					return nil, fmt.Errorf("%v", err)
+				}
+				fmt.Println()
 			}
 		}
 	} else {
@@ -136,12 +152,23 @@ func (j JenkinsClient) ListJobs(folderId string, maxQuantity int) (*gojenkins.Jo
 		if err != nil {
 			return nil, fmt.Errorf("%s, %v\n", errors.GetFolder, err)
 		}
-		err = printJobs(folder.Raw.Jobs)
+		err = printJobs(folder.Raw.Jobs, maxQuantity)
 		if err != nil {
 			return nil, fmt.Errorf("%v", err)
 		}
 	}
 	return nil, nil
+}
+
+func (j JenkinsClient) ListViews(maxQuantity int) error {
+	views, err := j.client.GetAllViews(j.ctx)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.GetView, err)
+	}
+	for _, view := range views {
+		fmt.Println(view.GetName())
+	}
+	return nil
 }
 
 func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
@@ -153,6 +180,7 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
 	}
+	fmt.Println(build.GetResult())
 	var result string
 	if build.IsRunning(j.ctx) {
 		result = Blue + "RUNNING" + Reset
@@ -160,6 +188,8 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 		result = Green + build.GetResult() + Reset
 	} else if build.GetResult() == "FAILURE" {
 		result = Red + build.GetResult() + Reset
+	} else if build.GetResult() == "ABORTED" {
+		result = Gray + build.GetResult() + Reset
 	} else {
 		return fmt.Errorf("%s, %v\n", errors.WrongJobResult, err)
 	}

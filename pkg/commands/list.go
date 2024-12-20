@@ -13,6 +13,7 @@ import (
 )
 
 var folderFlag string = "folder"
+var viewFlag string = "view"
 
 var quantityFlag string = "quantity"
 
@@ -22,6 +23,10 @@ var listJobsCmd = &cobra.Command{
 	Long:  "Lists all jobs of the specified folder, by default lists the jobs of the main view.",
 	Run: func(cmd *cobra.Command, args []string) {
 		folder, err := cmd.Flags().GetString(folderFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		view, err := cmd.Flags().GetString(viewFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -41,7 +46,39 @@ var listJobsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		_, err = j.ListJobs(folder, quantity)
+		_, err = j.ListJobs(folder, view, quantity)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+	},
+}
+
+var listViewsCmd = &cobra.Command{
+	Use:   "views",
+	Short: "List of views",
+	Long:  "Lists all views",
+	Run: func(cmd *cobra.Command, args []string) {
+		// folder, err := cmd.Flags().GetString(folderFlag)
+		// if err != nil {
+		// log.Fatalf("%v", err)
+		// }
+		quantity, err := cmd.Flags().GetInt(quantityFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		j, err := jenkins.ConnectToJenkins(conf)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		err = j.ListViews(quantity)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -131,6 +168,7 @@ var listCmd = &cobra.Command{
 func init() {
 	listCmd.AddCommand(listBuildsCmd)
 	listBuildsCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
+	listJobsCmd.PersistentFlags().StringP(viewFlag, "v", "", "View where to get builds from")
 
 	listCmd.AddCommand(listArtifactsCmd)
 	listArtifactsCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
@@ -140,6 +178,8 @@ func init() {
 
 	listCmd.AddCommand(listJobsCmd)
 	listCmd.PersistentFlags().Int(quantityFlag, 10, "Max quantity of jobs to list, default is 10")
+
+	listCmd.AddCommand(listViewsCmd)
 
 	rootCmd.AddCommand(listCmd)
 }
