@@ -11,11 +11,14 @@ import (
 
 var configFlag string = "config"
 
-var buildFlag string = "buildId"
+var buildFlag string = "build"
 var buildFlagMsg string = "ID number of the build"
 
-var jobFlag string = "jobId"
+var jobFlag string = "job"
 var jobFlagMsg string = "Full project name of the job. e.g: my-main-folder/my-sub-folder/my-job"
+
+var latestFlag string = "latest"
+var latestFlagMsg string = "Get the latest Jenkins resource. If specified, the ID of the resource will be ignored"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

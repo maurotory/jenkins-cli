@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/bndr/gojenkins"
 	"github.com/maurotory/jenkins-cli/pkg/errors"
@@ -48,6 +49,8 @@ func printJobs(jobs []gojenkins.InnerJob, maxQuantity int) error {
 			itemType = "Folder"
 		} else if job.Class == freestyleType {
 			itemType = "Freestyle"
+		} else if job.Class == organizationType {
+			itemType = "Organization"
 		} else {
 			return fmt.Errorf("%s\n", errors.UnknownItemType)
 		}
@@ -116,8 +119,20 @@ func getUser(build *gojenkins.Build) (string, error) {
 		if action.Causes[0]["_class"].(string) == timerType {
 			return "timer", nil
 		}
+		if action.Causes[0]["_class"].(string) == upstreamType {
+			return "upstream", nil
+		}
 		user := action.Causes[0]["userId"].(string)
 		return user, nil
 	}
 	return "", nil
+}
+
+func isTextFile(buf []byte) bool {
+	for _, b := range buf {
+		if b > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
 }

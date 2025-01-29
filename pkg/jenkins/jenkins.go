@@ -14,18 +14,16 @@ import (
 var Reset = "\033[0m"
 var Red = "\033[31m"
 var Green = "\033[32m"
-var Yellow = "\033[33m"
 var Blue = "\033[34m"
-var Magenta = "\033[35m"
-var Cyan = "\033[36m"
 var Gray = "\033[37m"
-var White = "\033[97m"
 
 var folderType = "com.cloudbees.hudson.plugins.folder.Folder"
 var jobType = "org.jenkinsci.plugins.workflow.job.WorkflowJob"
 var freestyleType = "hudson.model.FreeStyleProject"
+var organizationType = "jenkins.branch.OrganizationFolder"
 
 var timerType = "org.jenkinsci.plugins.parameterizedscheduler.ParameterizedTimerTriggerCause"
+var upstreamType = "org.jenkinsci.plugins.workflow.support.steps.build.BuildUpstreamCause"
 
 type JenkinsClient struct {
 	client *gojenkins.Jenkins
@@ -100,12 +98,18 @@ func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.Job
 	return nil, nil
 }
 
-func (j JenkinsClient) ListArtifacts(jobId string, buildId int64) error {
+func (j JenkinsClient) ListArtifacts(jobId string, buildId int64, latest bool) error {
 	jobId, err := parseJobId(jobId)
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
 	}
-
+	if latest {
+		builds, err := j.client.GetAllBuildIds(j.ctx, jobId)
+		if err != nil {
+			return fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
+		}
+		buildId = builds[0].Number
+	}
 	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.GetBuild, err)
@@ -171,10 +175,17 @@ func (j JenkinsClient) ListViews(maxQuantity int) error {
 	return nil
 }
 
-func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
+func (j JenkinsClient) GetBuild(jobId string, buildId int64, latest bool) error {
 	jobId, err := parseJobId(jobId)
 	if err != nil {
 		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	}
+	if latest {
+		builds, err := j.client.GetAllBuildIds(j.ctx, jobId)
+		if err != nil {
+			return fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
+		}
+		buildId = builds[0].Number
 	}
 	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
 	if err != nil {
@@ -212,10 +223,56 @@ func (j JenkinsClient) GetBuild(jobId string, buildId int64) error {
 	for _, artifact := range artifacts {
 		fmt.Println(artifact.FileName)
 	}
+	fmt.Printf("%s", separation)
+	fmt.Printf("Params:\n")
+	params := build.GetParameters()
+	for _, param := range params {
+		fmt.Printf("%s: %s\n", param.Name, param.Value)
+	}
+	fmt.Printf("%s", separation)
+	fmt.Printf("Upstream Jobs:\n")
+	upstreamJobs, err := build.Job.GetUpstreamJobs(j.ctx)
+	if err != nil {
+		return err
+	}
+	for _, upJob := range upstreamJobs {
+		fmt.Printf("%v\n", upJob.Raw)
+	}
+
+	fmt.Printf("%s", separation)
+	upstreamNum, err := build.GetUpstreamBuildNumber(j.ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Upstream Build Number: %d\n", upstreamNum)
+
+	fmt.Printf("%s", separation)
+	fmt.Printf("Downstream jobs:\n")
+	downstreamJobs, err := build.Job.GetDownstreamJobs(j.ctx)
+	if err != nil {
+		return err
+	}
+	for _, downJob := range downstreamJobs {
+		fmt.Printf("%v\n", downJob)
+	}
+
+	fmt.Printf("%s", separation)
+	fmt.Printf("Downstream Build Numbers:\n")
+	downstreamNum, err := build.GetDownstreamBuilds(j.ctx)
+	if err != nil {
+		return err
+	}
+	for _, downNum := range downstreamNum {
+		fmt.Printf("%v\n", downNum.Raw.Number)
+	}
 	return nil
 }
 
-func (j JenkinsClient) GetArtifact(jobId, artifact, output string, buildId int64) error {
+func (j JenkinsClient) GetArtifact(jobId, artifact, output string, buildId int64, latest bool, printArtifact bool) error {
+	jobId, err := parseJobId(jobId)
+	if err != nil {
+		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	}
 	if output == "" {
 		currentFolder, err := os.Getwd()
 		if err != nil {
@@ -223,9 +280,12 @@ func (j JenkinsClient) GetArtifact(jobId, artifact, output string, buildId int64
 		}
 		output = currentFolder + "/" + artifact
 	}
-	jobId, err := parseJobId(jobId)
-	if err != nil {
-		return fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
+	if latest {
+		builds, err := j.client.GetAllBuildIds(j.ctx, jobId)
+		if err != nil {
+			return fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
+		}
+		buildId = builds[0].Number
 	}
 	build, err := j.client.GetBuild(j.ctx, jobId, buildId)
 	if err != nil {
@@ -234,6 +294,19 @@ func (j JenkinsClient) GetArtifact(jobId, artifact, output string, buildId int64
 	artifacts := build.GetArtifacts()
 	for _, a := range artifacts {
 		if a.FileName == artifact {
+			if printArtifact {
+				data, err := a.GetData(j.ctx)
+				if err != nil {
+					return err
+				}
+				if !isTextFile(data) {
+					fmt.Printf("%s: Is a binary file.\n", a.FileName)
+					return nil
+				}
+				fmt.Printf("%s", data)
+				return nil
+
+			}
 			saveFile, err := checkFile(output)
 			if err != nil {
 				return fmt.Errorf("%v\n", err)
@@ -285,8 +358,15 @@ func (j JenkinsClient) CreateJob(jobId string, params map[string]string) (int64,
 	return item.Raw.Executable.Number, nil
 }
 
-func (j JenkinsClient) Logs(jobId string, buildId int64, follow bool) (*gojenkins.JobBuild, error) {
+func (j JenkinsClient) Logs(jobId string, buildId int64, follow bool, latest bool) (*gojenkins.JobBuild, error) {
 	jobId, err := parseJobId(jobId)
+	if latest {
+		builds, err := j.client.GetAllBuildIds(j.ctx, jobId)
+		if err != nil {
+			return nil, fmt.Errorf("%s, %v\n", errors.GetBuilds, err)
+		}
+		buildId = builds[0].Number
+	}
 	if err != nil {
 		return nil, fmt.Errorf("%s, %v\n", errors.ParseJobId, err)
 	}

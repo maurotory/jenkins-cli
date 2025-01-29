@@ -13,15 +13,17 @@ var homePathVar = "HOME"
 var hostVar = "host"
 var userVar = "user"
 var tokenVar = "token"
+var jobIdVar = "job"
 
 type JenkinsConfig struct {
 	Host  string
 	User  string
 	Token string
+	JobId string
 }
 
 func GetConfig(configPath string) (*JenkinsConfig, error) {
-	var host, user, token string
+	var host, user, token, jobId string
 	if configPath == "" {
 		homePath := os.Getenv(homePathVar)
 		if homePath == "" {
@@ -50,10 +52,12 @@ func GetConfig(configPath string) (*JenkinsConfig, error) {
 	if token == "" {
 		return nil, fmt.Errorf("%s: %s\n", errors.EmptyVar, tokenVar)
 	}
+	jobId = viper.GetString(jobIdVar)
 
 	return &JenkinsConfig{
 		Host:  host,
 		User:  user,
 		Token: token,
+		JobId: jobId,
 	}, nil
 }

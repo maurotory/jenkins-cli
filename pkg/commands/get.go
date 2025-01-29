@@ -14,6 +14,7 @@ import (
 
 var artifactFlag string = "artifact"
 var outputFlag string = "output"
+var printArtifactFlag string = "print"
 
 var getCmd = &cobra.Command{
 	Use:   "get",
@@ -26,23 +27,6 @@ var getBuildCmd = &cobra.Command{
 	Short: "Gets a build",
 	Long:  "Gets a build and prints its information",
 	Run: func(cmd *cobra.Command, args []string) {
-		job, err := cmd.Flags().GetString(jobFlag)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		if job == "" {
-			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
-		}
-		build, err := cmd.Flags().GetInt64(buildFlag)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		if build == 0 {
-			log.Fatalf("%s: %s", errors.EmptyFlag, buildFlag)
-		}
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
 		configPath, err := cmd.Flags().GetString(configFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
@@ -51,11 +35,32 @@ var getBuildCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
+		job, err := cmd.Flags().GetString(jobFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		if job == "" {
+			job = conf.JobId
+			if job == "" {
+				log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
+			}
+		}
+		latest, err := cmd.Flags().GetBool(latestFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		build, err := cmd.Flags().GetInt64(buildFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		if build == 0 && !latest {
+			log.Fatalf("%s: %s", errors.EmptyFlag, buildFlag)
+		}
 		j, err := jenkins.ConnectToJenkins(conf)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		err = j.GetBuild(job, build)
+		err = j.GetBuild(job, build, latest)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -67,19 +72,38 @@ var getArtifactCmd = &cobra.Command{
 	Short: "Gets an artifact",
 	Long:  "Gets an artifact and saves it at your current directory path",
 	Run: func(cmd *cobra.Command, args []string) {
+		configPath, err := cmd.Flags().GetString(configFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		conf, err := config.GetConfig(configPath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 		job, err := cmd.Flags().GetString(jobFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
 		if job == "" {
-			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
+			job = conf.JobId
+			if job == "" {
+				log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
+			}
+		}
+		latest, err := cmd.Flags().GetBool(latestFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
 		}
 		build, err := cmd.Flags().GetInt64(buildFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		if build == 0 {
+		if build == 0 && !latest {
 			log.Fatalf("%s: %s", errors.EmptyFlag, buildFlag)
+		}
+		printArtifact, err := cmd.Flags().GetBool(printArtifactFlag)
+		if err != nil {
+			log.Fatalf("%v", err)
 		}
 		if err != nil {
 			log.Fatalf("%v", err)
@@ -95,19 +119,11 @@ var getArtifactCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		configPath, err := cmd.Flags().GetString(configFlag)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		conf, err := config.GetConfig(configPath)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
 		j, err := jenkins.ConnectToJenkins(conf)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		err = j.GetArtifact(job, artifact, output, build)
+		err = j.GetArtifact(job, artifact, output, build, latest, printArtifact)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -117,10 +133,13 @@ var getArtifactCmd = &cobra.Command{
 func init() {
 	getCmd.AddCommand(getBuildCmd)
 	getCmd.AddCommand(getArtifactCmd)
-	getCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
-	getCmd.PersistentFlags().Int64(buildFlag, 0, buildFlagMsg)
+	getCmd.PersistentFlags().StringP(jobFlag, "j", "", jobFlagMsg)
+	getCmd.PersistentFlags().BoolP(latestFlag, "l", false, latestFlagMsg)
+	getCmd.PersistentFlags().Int64P(buildFlag, "b", 0, buildFlagMsg)
 	getArtifactCmd.PersistentFlags().StringP(outputFlag, "o", "", "Custom filename path where to save the artifact")
-	getArtifactCmd.PersistentFlags().String(artifactFlag, "", "Artifact Name which will be downloded")
+	getArtifactCmd.PersistentFlags().StringP(artifactFlag, "a", "", "Artifact Name which will be downloded")
+	getArtifactCmd.PersistentFlags().BoolP(printArtifactFlag, "p", false, "Print artifacts contents, if artifact contains ASCI characthers")
+	getArtifactCmd.PersistentFlags().BoolP(latestFlag, "l", false, latestFlagMsg)
 
 	rootCmd.AddCommand(getCmd)
 }

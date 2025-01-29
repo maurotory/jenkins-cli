@@ -29,22 +29,26 @@ var createBuildCmd = &cobra.Command{
 	Short: "Creates a build",
 	Long:  "Creates a build and prints this new build ID",
 	Run: func(cmd *cobra.Command, args []string) {
-		job, err := cmd.Flags().GetString(jobFlag)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		if job == "" {
-			log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
-		}
-		paramsFile, err := cmd.Flags().GetString(paramsFlag)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
 		configPath, err := cmd.Flags().GetString(configFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
 		conf, err := config.GetConfig(configPath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+
+		job := conf.JobId
+		if job != "" {
+			job, err = cmd.Flags().GetString(jobFlag)
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+			if job == "" {
+				log.Fatalf("%s: %s", errors.EmptyFlag, jobFlag)
+			}
+		}
+		paramsFile, err := cmd.Flags().GetString(paramsFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -66,7 +70,7 @@ var createBuildCmd = &cobra.Command{
 
 func init() {
 	createCmd.AddCommand(createBuildCmd)
-	createBuildCmd.PersistentFlags().String(jobFlag, "", jobFlagMsg)
+	createBuildCmd.PersistentFlags().StringP(jobFlag, "j", "", jobFlagMsg)
 	createBuildCmd.PersistentFlags().StringP(paramsFlag, "p", ".env", "Path where the parameters json file is stored")
 
 	rootCmd.AddCommand(createCmd)
