@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package commands
 
 import (
@@ -14,7 +11,6 @@ import (
 
 var followFlag string = "follow"
 
-// showCmd represents the show command
 var logsCmd = &cobra.Command{
 	Use:   "logs",
 	Short: "Shows logs of a build",

@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package commands
 
 import (
@@ -58,10 +55,6 @@ var listViewsCmd = &cobra.Command{
 	Short: "List of views",
 	Long:  "Lists all views",
 	Run: func(cmd *cobra.Command, args []string) {
-		// folder, err := cmd.Flags().GetString(folderFlag)
-		// if err != nil {
-		// log.Fatalf("%v", err)
-		// }
 		quantity, err := cmd.Flags().GetInt(quantityFlag)
 		if err != nil {
 			log.Fatalf("%v", err)
@@ -168,7 +161,6 @@ var listArtifactsCmd = &cobra.Command{
 	},
 }
 
-// listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Lists a resource of the selected type",

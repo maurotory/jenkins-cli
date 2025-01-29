@@ -44,7 +44,6 @@ func (j JenkinsClient) Info() {
 	fmt.Println("Successfully Connected:")
 	fmt.Printf("Server: %s\n", j.client.Server)
 	fmt.Printf("Version: %s\n", j.client.Version)
-	// fmt.Printf("Raw: %s\n", j.client.Raw.Jobs)
 }
 
 func (j JenkinsClient) ListBuilds(jobId string, maxQuantity int) (*gojenkins.JobBuild, error) {

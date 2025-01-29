@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package commands
 
 import (
@@ -16,14 +13,12 @@ import (
 
 var paramsFlag string = "params"
 
-// createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a resource of the selected path",
 	Long:  `Commands that allows creating different Jenkins resources`,
 }
 
-// buildCmd represents the "list builds" subcommand
 var createBuildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Creates a build",
