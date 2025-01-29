@@ -20,7 +20,7 @@ The command line `jctl` tool will be installed in your PATH. This tool only runs
 
 The tool will look for credentials in the `~/.jctl/config.json` by default.
 
-Create a file as shown below. Replace the values With your own Jenkins server configuration. The `host`,`user`i and `token` values are mandatory.
+Create a file as shown below. Replace the values with your own Jenkins server configuration. The `host`,`user`i and `token` values are mandatory.
 ```
 { 
   "host" : "http://localhost:8080",
@@ -29,11 +29,11 @@ Create a file as shown below. Replace the values With your own Jenkins server co
   "job": "my-root-folder/my-subfolder/my-job"
 }
 ```
-And `job`, which is an optional field, corresponds to the full project name of the job, so in case the job is created inside a folder, add the whole path.
-Then run the command below. If you receive a success message with the Jenkins server info it means that you are good to go!
+And `job`, which is an optional field, corresponds to the full project name of the job. In case the job is created inside a folder, add the whole path. Finally run the command below. 
 ```
 jctl info
 ```
+If you receive a success message with the Jenkins server info it means that you are good to go!
 
 ## Examples
 
@@ -53,7 +53,7 @@ To create and run a new build run the following:
 ```
 jctl create build --params params.env
 ```
-Where the `params.env` consists of a `.env` file with all the parameters as variable. You can ignore this flag if the pipeline does not need any parameters. Example of a `.env` file is shown below:
+Where the `params.env` consists of a `.env` file with all the parameters as variables. You can ignore this flag if the pipeline does not need any parameters. Example of a `.env` file is shown below:
 ```
 "STRING_PARAM"="mystring"
 "BOOLEAN_PARAM"=false
